@@ -1,0 +1,146 @@
+---
+title: "DSA211_Group_Project_Part_2"
+output: html_document
+date: "2022-10-29"
+---
+
+# Multiple Regression MSE
+```{r}
+bankdata <- read.csv("Bank2022P.csv", stringsAsFactors = TRUE)
+attach(bankdata)
+sum(is.na(bankdata))
+dim(bankdata)
+
+# multiple regression model
+glm1 <- glm(Balance~poly(Income,2,raw = TRUE)*Gender+Cards*Gender+Rating, data = bankdata)
+summary(glm1)
+
+# 10-fold cross-validation of lm1
+library(boot)
+RNGkind(sample.kind = "Rounding")
+set.seed(1234)
+cv.mr <- cv.glm(bankdata, glm1, K=10)
+glm.mse <- cv.mr$delta[1]
+glm.mse
+```
+
+# Stdz variables
+```{r}
+# Stdz independent variables: Income, Income^2 and Rating
+sdi <- sd(Income)
+nIncome <- Income/sdi
+sdr <- sd(Rating)
+nRating <- Rating/sdr
+```
+
+
+# Lasso MSE
+```{r}
+# Not so useful as it drops Income:Gender
+library(glmnet)
+x <- model.matrix(Balance~poly(Income,2,raw = TRUE)*Gender+Cards*Gender+Rating, data = bankdata)[,-1]
+y <- bankdata$Balance
+RNGkind(sample.kind = "Rounding")
+set.seed(1234)
+train <- sample(1:nrow(x), nrow(x)*0.9)
+test <- -train
+
+lasso.mod <- glmnet(x[train,], y[train], alpha=1)
+cv.out <- cv.glmnet(x[train,], y[train], alpha=1)
+plot(cv.out)
+bestlam <- cv.out$lambda.min
+bestlam
+lasso.pred <- predict(lasso.mod, s=bestlam, newx=x[test,])
+mean((lasso.pred-y[test])^2)
+out.lasso <- glmnet(x,y, alpha=1)
+lasso.coef <- predict(out.lasso, type="coefficients", s=bestlam)[1:9,]
+lasso.coef[lasso.coef!=0]
+```
+
+# General lasso
+```{r}
+# Can explore more combinations here
+library(glmnet)
+x <- model.matrix(Balance~(poly(Income,2,raw = TRUE)+Rating+Cards+Gender)^2, data = bankdata)[,-1]
+y <- bankdata$Balance
+
+RNGkind(sample.kind = "Rounding")
+set.seed(1234)
+lasso.mod <- glmnet(x[train,], y[train], alpha=1)
+cv.out <- cv.glmnet(x[train,], y[train], alpha=1)
+plot(cv.out)
+bestlam <- cv.out$lambda.min
+bestlam
+lasso.pred <- predict(lasso.mod, s=bestlam, newx=x[test,])
+mean((lasso.pred-y[test])^2)
+out.lasso <- glmnet(x,y, alpha=1)
+lasso.coef <- predict(out.lasso, type="coefficients", s=bestlam)[1:11,]
+lasso.coef[lasso.coef!=0]
+```
+# New regression model based on lasso
+```{r}
+glm2 <- glm(Balance~poly(Income,2,raw = TRUE)*Gender+Limit+Cards*Gender+Married*Cards+Education*Gender, data = bankdata)
+summary(glm2)
+
+# Testing of interaction terms for new predictors
+# glm2 <- glm(Balance~(poly(Income,2,raw = TRUE)+Limit+Cards+Married+Education+Gender)^2, data = bankdata) 
+# summary(glm2)
+
+# glm2 <- glm(Balance~(I(Income^2)+.)^2, data = bankdata)
+# summary(glm2)
+
+library(boot)
+RNGkind(sample.kind = "Rounding")
+set.seed(1234)
+cv.mr <- cv.glm(bankdata, glm2, K=10)
+glm2.mse <- cv.mr$delta[1]
+glm2.mse
+```
+
+
+# Ridge Regression
+```{r}
+x <- model.matrix(Balance~., data = bankdata)[,-1]
+rr.mod <- glmnet(x[train,], y[train], alpha=0)
+cvrr.out <- cv.glmnet(x[train,], y[train], alpha=0)
+plot(cvrr.out)
+bestlamrr <- cvrr.out$lambda.min
+bestlamrr
+rr.pred <- predict(rr.mod, s=bestlamrr, newx=x[test,])
+mean((rr.pred-y[test])^2)
+out.rr <- glmnet(x,y, alpha=0)
+rr.coef <- predict(out.rr, type="coefficients", s=bestlamrr)[1:9,]
+rr.coef
+```
+
+
+# Tree Regression
+```{r}
+library(tree)
+tree.model <- tree(Balance~I(Income^2)+., data = bankdata, subset = train)
+plot(tree.model)
+text(tree.model, pretty=0)
+
+# Pruning the tree regression
+RNGkind(sample.kind = "Rounding")
+set.seed(1234)
+cvtree <- cv.tree(tree.model)  # use the cv.tree function to prune the tree.boston
+cvtree
+plot(cvtree$size, cvtree$dev, type="b", main="Cross validation: Deviance versus Size",
+     xlab="Number of terminal nodes", ylab="deviance")
+nn <- cvtree$size[which.min(cvtree$dev)]  # identify the optimal number of nodes 
+nn #could change as cv is based on random allocation of k folds. Run with set.seed to be consistent
+prune.balance <- prune.tree(tree.model, best=nn) # prune the tree with optimal size
+plot(prune.balance)
+title ("Pruned Regression Tree for Bank2022P data")
+text(prune.balance, pretty=0)
+
+# prediction error of optimal pruned tree by using test set
+yhat1 <- predict(prune.balance, newdata=bankdata[test,])
+bank.test1 <- bankdata[test, "Balance"]
+plot(yhat1, bank.test1, main="Pruned Tree prediction versus observed balance for test data",
+     xlab="predict balance", ylab="observed balance")
+abline(0,1)
+mean((yhat1-bank.test1)^2) # mean squared error
+```
+

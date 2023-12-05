@@ -1,0 +1,272 @@
+---
+title: "CheatSheet"
+output: html_document
+date: "2022-11-05"
+---
+
+
+---- Chapter 7--- Resampling Methods
+```{r Resampling Methods LOOCV}
+#LOOCV
+library(boot)
+glm.fit1 <- glm(mpg~horsepower, data=Auto)
+cv.err1 <- cv.glm(Auto, glm.fit1)
+cv.err1$delta
+
+# delta[1] is the standard CV estimate where delta[2] is a bias-corrected version
+#LOOCV with complex polynomial fits
+cv.err2 <- rep(0,10)
+for (i in 1:10)  {
+  glm.ff <- glm(mpg~poly(horsepower,i, raw=TRUE), data=Auto)
+  cv.err2[i] <-cv.glm(Auto, glm.ff)$delta[1]}
+cv.err2
+plot(c(1:10), cv.err2, type="b", main="LOOCV", 
+       xlab="Degree of Polynomial", ylab="MSE")
+
+#K-fold CV where K=5
+set.seed(17)
+cv.err3 <- rep(0,10)
+for (i in 1:10)  {
+  glm.ff <- glm(mpg~poly(horsepower,i, raw=TRUE), data=Auto)
+  cv.err3[i] <-cv.glm(Auto, glm.ff, K=5)$delta[1]}
+cv.err3
+plot(c(1:10), cv.err3, type="b", main="5-fold CV", 
+     xlab="Degree of Polynomial", ylab="MSE")
+```
+
+```{r classwork example (Less Fancy)}
+## Model 1
+#LOOCV
+library(boot)
+glm.fit1 <- glm(medv~., data=boston)
+cv.err1 <- cv.glm(boston,glm.fit1) 
+cv.err1$delta
+
+glm.fit2 <- glm(medv~ . - tax - age, data = boston)
+cv.err2 <- cv.glm(boston,glm.fit2) 
+cv.err2$delta
+
+RNGkind(sample.kind="Rounding") # use this function to set the old generator
+set.seed(6009)
+
+
+RNGkind(sample.kind="Rounding") # use this function to set the old generator
+set.seed(6009)
+
+cv.err3<-cv.glm(boston, glm.fit1, K=10)$delta[1]
+cv.err3
+plot(cv.err3, type="b", main="10-fold CV", 
+     xlab="Degree of Polynomial", ylab="MSE")
+
+
+cv.err4<-cv.glm(boston, glm.fit2, K=10)$delta[1]
+cv.err4
+plot(cv.err3, type="b", main="10-fold CV", 
+     xlab="Degree of Polynomial", ylab="MSE")
+
+##### Alternative instead of for loop ####
+RNGkind(sample.kind = "Rounding")
+set.seed(123)
+cv.error1 <- rep(0,4) # for LOOCV
+cv.error2 <- rep(0,4) # for CV with k=10
+glm.f1 <- glm(Sales~poly(Price, 1, raw=TRUE), data=Carseats)
+glm.f2 <- glm(Sales~poly(Price, 2, raw=TRUE), data=Carseats)
+glm.f3 <- glm(Sales~poly(Price, 3, raw=TRUE), data=Carseats)
+glm.f4 <- glm(Sales~poly(Price, 4, raw=TRUE), data=Carseats)
+cv.error1[1]<- cv.glm(Carseats, glm.f1)$delta[1]
+cv.error1[2]<- cv.glm(Carseats, glm.f2)$delta[1]
+cv.error1[3]<- cv.glm(Carseats, glm.f3)$delta[1]
+cv.error1[4]<- cv.glm(Carseats, glm.f4)$delta[1]
+cv.error1
+cv.error2[1]<- cv.glm(Carseats, glm.f1, K=10)$delta[1]
+cv.error2[2]<- cv.glm(Carseats, glm.f2, K=10)$delta[1]
+cv.error2[3]<- cv.glm(Carseats, glm.f3, K=10)$delta[1]
+cv.error2[4]<- cv.glm(Carseats, glm.f4, K=10)$delta[1]
+cv.error2
+```
+
+
+```{r Chapter 7 Bootstrapping methods}
+# bootstrap to estimate 95% CI of the slope of linear regression model
+#  write the bootstrap function to find the slope
+boot.fn <- function(da, ind)
+  return(coef(lm(mpg~horsepower, data=da, subset=ind)))
+
+set.seed(123)
+boot.fn(Auto, sample(392, 392, replace=T))  # bootstrap one time only
+bs_result <- boot(Auto, boot.fn, R=10000)  #use boot function to bootstrap 10000 times
+
+### Example
+yint <- mean(bs_result$t[,1])
+B1 <- mean(bs_result$t[,2])
+B2 <- mean(bs_result$t[,3])
+B3 <- mean(bs_result$t[,4])
+
+c(quantile(bs_result$t[,2], 0.025), quantile(bs_result$t[,2], 0.975))
+
+```
+
+
+
+
+----Chapter 8 --- Best Regression Subset Selection
+
+```{r Best Regression Subset Selection}
+# Best Subset Selection
+library(leaps)
+regfit1.all <- regsubsets(Salary~., Hit)  # run the Best Subset Selection
+regfit3.all <- regsubsets(Salary~., Hit, nvmax=19, method="backward")
+regfit4.all <- regsubsets(Salary~., Hit, nvmax=19, method="forward")
+
+summary(regfit1.all)          # by default, only report results up to the eigth-variable model
+
+regfit2.all <- regsubsets(Salary~., Hit, nvmax=19) # nvmax option can obtain all models
+reg2.summary <- summary(regfit2.all)
+names(reg2.summary) # check what measurements are given in the selection process
+
+plot(reg2.summary$rss, main="RSS plot", 
+     xlab="Number of variables", ylab="RSS", type="b")
+plot(reg2.summary$adjr2, main="Adjusted r^2 plot", 
+     xlab="Number of variables", ylab="Adjusted r^2", type="b")
+plot(reg2.summary$cp, main="Cp plot", 
+     xlab="Number of variables", ylab="Cp", type="b")
+plot(reg2.summary$bic, main="BIC plot", 
+     xlab="Number of variables", ylab="BIC", type="b")
+a <- which.min(reg2.summary$rss)
+b <- which.max(reg2.summary$adjr2)
+c <- which.min(reg2.summary$cp)
+d <- which.min(reg2.summary$bic)
+coef(regfit2.all, a)
+coef(regfit2.all, b)
+coef(regfit2.all, c)
+coef(regfit2.all, d)
+```
+
+## Including Plots
+
+```{r Best RegSubset MSE on validation}
+RNGkind(sample.kind = "Rounding")
+set.seed(1234)
+
+train <- sample(392,200)
+Auto1 <- Auto[,c(1:8)]
+trainset <- Auto1[train,]
+testset <- Auto1[-train,]
+
+regfit22.all <- regsubsets(mpg~., trainset , nvmax=9) #run the best selection on training set
+test.mat <- model.matrix(mpg~., testset)  # make the model matrix from the test data
+val.errors <- rep(NA, 7)
+
+# run a loop, and for each value of i, we extract the coefficients from the regfit22.all
+# and then multiply the coefficients with the column of the test model matrix to form the predictions
+# ans then compute the test MSE
+
+for (i in 1:7) {
+  coefi <- coef(regfit22.all, id=i) # extract the coefficients
+  pred <- test.mat[, names(coefi)]%*%coefi # multiply the coefficients to form the prediction
+  val.errors[i] <- mean((testset$mpg-pred)^2) # compute the test MSE
+}
+val.errors
+
+aa <- which.min(val.errors)  # identify i with minimum MSE
+aa
+
+coef(regfit22.all, aa)  # the best selected model with coefficients
+# But we should use the full data set to get the model!
+coef(regfit2.all, aa)
+```
+
+```{r Best Regsubset k fold CV}
+RNGkind(sample.kind = "Rounding")
+set.seed(123)
+
+
+predict.regsubsets <- function(object, newdata, id){
+  form <- as.formula(object$call[[2]])
+  mat <- model.matrix(form, newdata)
+  coefi <- coef(object, id=id)
+  xvars <- names(coefi)
+  mat[, xvars]%*%coefi
+}
+
+
+k <- 10  # determine the k-fold cross-validation
+folds <- sample(1:k, nrow(Auto1), replace=TRUE)
+cv.errors <- matrix(NA, k, 7, dimnames=list(NULL, paste(1:7)))
+for (j in 1:k) {
+  best.fit <- regsubsets(mpg~., data=Auto1[folds!=j,], nvmax=7)
+  for (i in 1:7){
+    pred <- predict.regsubsets(best.fit, Auto1[folds==j,], id=i)
+    cv.errors[j,i] <- mean((Auto1$mpg[folds==j]-pred)^2)
+  }
+}
+mean.cv <- apply(cv.errors, 2, mean)#to average over the columns of matrix to error for each model
+mean.cv
+bb <- which.min(mean.cv)
+bb
+# we should use the full data as training set to get the full model
+coef(regfit2.all, bb)
+
+
+```
+
+
+---- Chapter 9 ---- Ridge Regression and Lasso 
+```{r  best Lambda Ridge & Lasso }
+
+cvrr.out <- cv.glmnet(x[train,], y[train], alpha=0) #obtain the 10-fold cross validation error
+plot(cvrr.out)
+bestlam <- cvrr.out$lambda.min  #identify the lambda for smallest CV error
+bestlam
+ridge.pred <-predict(cvrr.out, s=bestlam, newx=x[test,])  # get the prediction from best lambda
+mean((ridge.pred-y.test)^2)  # obtain the MSE from the test set
+
+out.rr <- glmnet(x,y,alpha=0) # use all the data to refit the model
+
+# get the final model with y-intercept and 19 coefficients by using the best lambda
+predict(out.rr, type="coefficients", s=bestlam)[1:10,]
+
+
+
+cv.out <- cv.glmnet(x[train,], y[train], alpha=1)
+plot(cv.out)
+bestlam <- cv.out$lambda.min
+bestlam
+lasso.pred <- predict(cv.out, s=bestlam, newx=x[test,])
+mean((lasso.pred-y.test)^2)
+out.lasso <- glmnet(x,y, alpha=1, lambda=grid)
+lasso.coef <- predict(out.lasso, type="coefficients", s=bestlam)[1:20,]
+lasso.coef
+lasso.coef[lasso.coef!=0]
+
+
+predict(out.lasso,s=bestlam, newx=x[1:3,]) ## it inserts all the data to the model and predict an output of Y. Hence x[1:3] is to get the first 3 observations
+
+```
+
+
+--- Chapter 11 Random Forest -----
+
+```{r}
+
+
+
+## Using Random forest approach to training data , getting MSE, determine which variable are most important
+Cars.test <- carseats[-train,]
+
+rf.cars <- randomForest(Sales~.,data=carseats, subset=train, mtry=3, importance=TRUE) #using random forest
+rf.cars
+yhat.rf <- predict(rf.cars, newdata=Cars.test)
+mean((yhat.rf-Cars.test[,1])^2)
+importance(rf.cars)
+varImpPlot(rf.cars, main="Importance measure plot")
+```
+
+```{r predict value by insertting}
+data <- data.frame(Income=23,Population=140,Price=132,Age=60,Education=10,ShelveLoc="Medium",US="No",Urban="Yes",stringsAsFactors = TRUE )
+carseats1 <- carseats[,-1]
+carseats1 <- data
+
+predict.y <- predict(prune.car, newdata=carseats1)
+
+

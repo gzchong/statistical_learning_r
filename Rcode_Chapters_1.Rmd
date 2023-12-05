@@ -1,0 +1,348 @@
+---
+title: "CheatSheet_1"
+output: html_document
+date: "2022-11-05"
+---
+
+-----General Functions-----
+```{r General Functions}
+
+bankdata <- read.csv("C:/Users/huawe/DSA211/Content/Data Sets/Bank2022P.csv", stringsAsFactors = TRUE)
+bank<-read.csv("Bank2022P.csv",stringsAsFactors = TRUE)
+
+mean(data1)sum(data1)length(data1)var(data1)sd(data1)median(data1)
+quantile(data1, 0.25) # find the 25 percentile, quantile (data1, c(0.25,0.5, 0.75))
+
+seq(from = 1, to = 1, by = )
+
+plot(1:40, c10, col="green", type="l", xlab="X values", ylab="density",
+     main="Chi-square pdf with 10 and 15 df ")
+
+### secondary plot
+lines(1:40, c1, col="red", type="l")
+legend(25, 0.08, lty=1, col=c("green", "red"), legend= c("df=10", "df=15"))
+
+boxplot(lunch, dinner, main="Spending in fast-food restaurant", 
+        names=c("lunch", "dinner"), col="yellow", xlab="Time period",
+        ylab="spending ($)")
+
+abline(lm.1, lwd=3, col ="blue")
+abline(lm(y ~ x, data = mtcars), col = "blue")
+
+library(car)
+vif()
+
+```
+
+
+
+
+
+---- Week 1 Review of Statistics and Probability----
+
+```{r General Functions}
+var1 <- var(data1)  # find the sample variance
+stdev1 <- sd(data1)
+popvar <- sum((data1-mean1)^2)/(length(data1))  # find the population variance if the data set is population
+median1 <- median(data1)
+resu4 <- quantile (data1, c(0.25,0.5, 0.75))
+boxplot(data1, data2, data3)
+
+# Example 2: Binomial distributions n=10, p=0.2
+dbinom(0:10, 10, 0.2)  # find the probability mass function with x=0,1,...10
+pbinom(0:10, 10, 0.2)  # find the probability cumulative function
+qbinom(c(0.25, 0.5, 0.75), 10, 0.2) # find the 25, 50, 75 percentiles
+rbinom(100, 10, 0.2)
+
+# Example 3: Hyptergeometric distribution
+#  Total balls 11, (5 white and 6 black), sample 4 balls without replacement 
+# Random variable is the number of white balls in the sample
+dhyper(0:4, 5, 6, 4)  
+phyper(0:4, 5, 6, 4)
+qhyper(c(0.25, 0.5, 0.75, 0.9), 5,6,4)
+rhyper(20, 5,6,4)
+
+
+# Example 4: Poisson Distribution
+#  mu=4.25, means the average number of events in the given time frame
+dpois(0:14, 4.25)
+ppois(0:14, 4.25)
+qpois(c(0.25, 0.5, 0.75), 4.25)
+rpois(35, 4.25)
+
+
+# Example 5: Normal Distribution with mean=4.25, standard deviation=1.5
+dnorm(1:20*0.5, 4.25, 1.5) # find the density function with x=0.5, 1, 1.5...., 10
+pnorm(1:20*0.5, 4.25, 1.5) # find the cdf with x=0.5, 1, 1.5, ....., 10
+qnorm(1:9*0.1, 4.25, 1.5)  # find the 10, 20, .., 90 percentiles of normal
+rnorm(25, 4.25, 1.5) # generate 25 normal random variables
+
+# Example 6: exponential Distribution
+# lambda =2.5 e.g. average accidents (number of events) per day
+dexp(0.2*1:16, 2.5)
+pexp(0.2*1:16, 2.5)
+qexp(c(0.25, 0.5, 0.75, 0.9), 2.5)
+rexp(25, 2.5)
+
+# F critical value 
+qf(0.95,1,998)
+```
+
+
+
+---- Week 2 ---- Statistics Inference
+
+```{r Statistics Inference}
+ME_lunch <-  crit1*std1/sqrt(n)  # find the margin of error 
+CI_lunch <- c(mean1-ME_lunch, mean1+ME_lunch) # find the CI of population mean
+CI1 <-t.test(lunch, alternative="two.sided", conf.level=0.95) # find the CI using function
+
+# Example 2: confidence interval for proportion (one sample)
+prop.test(3664, n=6543, alternative="two.sided",
+                 conf.level=0.95, correct=FALSE)
+
+# Example 3: one sample t-test for mean
+# test whether the average lunch spending is different from $6.0
+t.test(lunch, alternative="two.sided", mu=6.0, 
+                 conf.level=0.95)
+
+# Example 4: one sample Z-test for proportion
+presult1 <- prop.test(185, n=500, p=0.3333, alternative="two.sided",
+                      conf.level=0.95, correct=FALSE)
+
+t.test(lunch, dinner,  alternative="two.sided", mu=0, 
+       var.equal=TRUE, conf.level=0.95)
+
+t.test(lunch, dinner,  alternative="two.sided", mu=0, 
+       var.equal=FALSE, conf.level=0.95)
+
+prop.test(c(136, 224), n=c(240, 260),  alternative="two.sided",
+          conf.level=0.99, correct=FALSE)
+```
+
+
+
+
+---- Week 3 ---- Probability Modeling
+
+```{r Probability Modeling}
+c1 <- dchisq(1:40, 15)  # chi-square pdf with df=15
+c2 <- pchisq(1:40, 15)  # chi-square cdf with df=15
+c3 <- qchisq(c(0.01, 0.05, 0.1, 0.9, 0.95, 0.99), 15) # chi-square percentiles
+c10 <- dchisq(1:40, 10)  # chi-square pdf with df=10
+
+# Example 2:   t-distribution with df=5
+xval <- seq(from = -4, to =4, by=0.01 )
+dt(xval, 5)
+pt(xval, 5)
+qt(c(0.01, 0.05, 0.1, 0.9, 0.95, 0.99), 5)
+n1 <- dnorm(xval, 0, 1)
+plot(xval, n1, col="blue", type="l", xlab="X values", ylab="density",
+     main="t-distribution with 5 df and standard normal distribution ")
+lines(xval, t1, col="red", type="l")
+legend(1.2, 0.35, lty=1, col=c("red", "blue"), legend= c("t with df=5", "N(0,1)"))
+
+# Example 3: Poisson modeling (London death data)
+library(fitdistrplus)  # call the package function every time you use it
+death <- c(rep(0,484), rep(1,391), rep(2, 164), rep(3,45), rep(4,11), rep(5,1))  # generate the data set based on lecture slides
+fpois <- fitdist(death, distr="pois")  # fit the data set to Poisson distribution
+result1 <- gofstat(fpois, chisqbreaks=c(0:3), discrete=TRUE, 
+                   fitnames=c("Poisson"))  # run the goodness of fit test
+#chisqbreaks is the cells for expected frequencies 
+
+plot(fpois)
+summary(fpois)
+
+# Example 4:  Exponential modeling (volcano data)
+# you may try some other distributions: gamma,  log normal, exponential
+volcano <- c(126, 73, 3, 6, 37, 23, 73, 23, 2, 65, 
+             94, 51, 26, 21, 6, 68, 16, 
+             20, 6, 18, 6, 41, 40, 18, 41, 11, 12, 
+             38, 77, 61, 26, 3, 38, 50, 91, 12)
+fexp <- fitdist(volcano, distr= "exp")
+fnorm <- fitdist(volcano, distr= "norm")
+flnorm <- fitdist(groundbeef$serving, "lnorm")
+fpois <- fitdist(death, distr="pois") 
+fgamma <- fitdist(groundbeef$serving, "gamma")
+
+summary(fexp)
+summary(fnorm)
+plot(fexp)
+plot(fnorm)
+
+price <- Z74SI$Adj.Close  # put the closing price to object "price"
+volume <- Z74SI$Volume
+rate <- NULL  # define a new object "rate" without any elements
+# calculate the rates of daily change and put them to object "rate"
+for (i in 1:(length(price)-1)) 
+{rate[i] <- (price[i]-price[i+1])/price[i+1]}  
+frate <- fitdist(rate, "norm")
+summary(frate)
+plot(frate)
+
+#Example 6: Historical 99% VaR of one day for SingTel investment 4000 shares at $3.30
+AbsVaR <- -1*quantile(rate, 0.01)*4000*3.30
+meanR <- mean(rate)*4000*3.30
+SingVaR1 <- meanR+AbsVaR
+
+#Example 7: Parametric 99% VaR of one day for SingTel investment 4000 shares at $3.30
+SingVaR2 <- sd(rate)*4000*3.30*qnorm(0.99, 0, 1)
+```
+
+
+
+
+---- Week 4 ---- Simple Linear Regression
+```{r Simple Linear Regression}
+test <- datatest$Test  # define Test column in data set as test
+assign <- datatest$Assignments
+# using lm() function to fit the line with 'test' as response and 'assign' as predictor 
+reg.fit <- lm(test~assign, data = ..) 
+summary(reg.fit)
+names(reg.fit)
+plot(assign, test, main="Linear relationship between assignment scores and test scores in STAT101", 
+     xlab="Assignment scores", ylab="Test scores")
+#  check the results of following three functions and compare the different results
+abline(reg.fit, lwd=3, col="red")
+
+resid <- residuals(reg.fit)
+plot(assign, residuals(reg.fit), main="Relationship between 
+     assignment scores and residuals", 
+     xlab="Assignment scores", ylab="Residuals")
+
+library(fitdistrplus)
+fnorm <- fitdist(resid, "norm")
+result <- gofstat(fnorm, discrete=FALSE)
+result
+plot(fnorm)
+
+#  for Kolmogorov-Smirnov test:  
+# critical value is 1.22/sqrt(n) for alpha=0.10
+# critical value is 1.36/sqrt(n) for alpha=0.05
+# critical value is 1.63/sqrt(n) for alpha=0.01
+KScritvalue <-1.36/sqrt(length(test))
+KScritvalue
+summary(fnorm)
+plot(fnorm)
+# prediction and estimation
+confint(reg.fit, level=0.95)
+predict(reg.fit, data.frame(Size=2.1, Age=0)) ## If they did not state for confidence or prediction & Sig level
+
+predict(reg.fit, data.frame(assign=c(60, 70, 86, 100, 110)), interval="confidence", level=0.95)
+predict(reg.fit, data.frame(assign=c(60, 70, 86, 100, 110)), interval="prediction", level=0.95)
+```
+
+
+
+---- Week 5 ---- Multiple Linear Regression
+```{r Multiple Linear Regression}
+lm.sale3 <- lm(sales~TV+radio+newspaper, data=adv)
+
+rss <- sum((fitted(lm.sale3) - adv$sales)^2)
+rss
+ess <- sum((fitted(lm.sale3)-mean(adv$sales))^2)
+ess
+tss <- sum(((adv$sales)-mean(adv$sales))^2)
+tss2 <- ess + rss
+tss
+tss2
+f <- ((tss-rss)/3)/(rss/(200-3-1))
+
+AIC(lm.sale3)
+BIC(lm.sale3)
+# quadratic relationship
+lm.carseat5=lm(Sales~CompPrice+Income+Advertising+
+                 Price+ShelveLoc+Age+I(Price^2), data=Carseats)
+```
+
+
+
+
+---- Week 6 ---- Logistic Linear Regression
+```{r Logistic Linear Regression}
+# run the logistic regression models
+glm.def1 <- glm(default~ balance, data=Default, family=binomial)
+summary(glm.def1)
+
+
+pvalue1 <- with(glm.def1, pchisq(null.deviance- deviance, df.null-df.residual, lower.tail=FALSE))
+pvalue1
+1-pchisq(2920.6-1596.5, 1)  # or use computer outcomes to calculate p-value
+pchisq(glm.def1$null.deviance- glm.def1$deviance, glm.def1$df.null-glm.def1$df.residual, lower.tail=FALSE) # without using the with() function
+
+
+# Example:  calculation of deviance statistic
+y <- c(1,1,1,0,0)
+x <- c(24, 27, 29, 28, 32)
+glm.re <- glm(y~x, family=binomial)
+glm.null <- glm(y~1, family=binomial)
+summary(glm.null)
+summary(glm.re)
+a <- predict(glm.re, data.frame(x=c(24, 32)), type="response")
+b <- predict(glm.re, data.frame(x=c(24, 32)))
+a
+b
+
+# logistic regression plot
+prob <- function(a, b, x) {
+  aa <- exp(a+b*x)
+  prob <- aa/(1+aa)
+  prob
+}
+r1 <-prob(-10.65, 0.0055, 1000)
+r2 <-prob(-10.65, 0.0055, 2000)
+
+#p(x) = e^(b0+b1x1+b2x2)/(1+e^(b0+b1x1+b2x2))
+#log(p(x)/(1-p(x)) = b0 +b1*x1+b2*x2
+
+posdev <- function(w1, w2) {
+  posdev <- sqrt(2*-log(1-(1-fitted-y)))
+  posdev
+  }
+
+negdev <- function(w1, w2) {
+  negdev <- -1*sqrt(2*-log(1-fitted))
+  negdev
+  }
+#Positive Dev
+d1 <- sqrt(2*-log(1-(fitted-y))   ## Prob(x1,x2) to replace fitted-y if there's no glm output (manually inputted)
+#negative Dev
+d2 <- -sqrt(2*-log(1-(lowerfitted-y-0))) ## Prob(x1,x2) to replace fitted-y if there's no glm output (manually inputted)
+d1
+d2
+## deviance statistics
+resdev <- 0.1939^2+0.6333^2+1.2355^2+(-1.4785)^2+(-0.3793)^2
+resdev
+
+pvalue <- with(glm.re, pchisq(null.deviance- deviance, df.null-df.residual, lower.tail=FALSE))
+pvalue
+
+
+#Model 5  is the best models; calculate the confusion matrix for this model
+# set the threshold value to 0.5
+glm.prob5 <- predict(glm.def5, type="response")
+glm.pred5.1 <- rep("Predicted No Default", 10000)
+glm.pred5.1[glm.prob5> 0.5] <- "Predicted Default"
+table(glm.pred5.1, default)
+
+
+# logistic regression plot
+ff <- function(a, b, x) {
+  aa <- exp(a+b*x)
+  ff <- aa/(1+aa)
+  ff
+}
+r1 <-ff(-10.65, 0.0055, 1000)
+r2 <-ff(-10.65, 0.0055, 2000)
+r1
+r2
+bb <- c(1:100*30)
+r3 <- ff(-10.65, 0.0055, bb)
+plot(bb,r3, main="Estimated probability of default using logistic regression",
+     xlab="Balance", ylab="Prob. of Default")
+```
+
+
+
+
+
